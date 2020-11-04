@@ -80,6 +80,7 @@ public class Receiver extends JFrame implements ActionListener {
 		this.textFileName = new JLabel("Text File Name");
 		this.textFileNameField = new JTextField(5);
 		this.packetsReceivedLabel = new JLabel("Number of inorder packets");
+		this.packetsReceivedField.setEditable(false);
 		this.packetsReceivedField = new JTextField(5);
 		this.maxSizeLabel=new JLabel("Max size of datagram (bytes)");
 		this.maxSizeField=new JTextField(10);
@@ -379,11 +380,12 @@ public class Receiver extends JFrame implements ActionListener {
 				}
 			line=new String(packet.getData(), 0, packet.getLength());
 			line=line.trim();
+			responseString= (packetCount-1)%2==0 ? "0": "1";
 			System.out.println("line: "+line);
 			if(line.equals("EOF")){
 				eof=false;
 				break;
-			}else {
+			}else if(line.substring(0, 1).equals(responseString)){
 				try {
 					line=line.concat("\n");
 					fileWriter.write(line.substring(1, line.length()).getBytes());
@@ -393,16 +395,17 @@ public class Receiver extends JFrame implements ActionListener {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-			}
-			DatagramPacket response= new DatagramPacket(buf, buf.length, packet.getAddress(), packet.getPort());
-			
-			responseString= packetCount%2==0 ? "0": "1";
-			response.setData(responseString.getBytes());
-			//System.out.println(line+"\n");
+				DatagramPacket response= new DatagramPacket(buf, buf.length, packet.getAddress(), packet.getPort());
+				
+				responseString= packetCount%2==0 ? "0": "1";
+				response.setData(responseString.getBytes());
+				//System.out.println(line+"\n");
 
 				socket.send(response);
 				lastPacket=packet;
 				socket.setSoTimeout(Integer.parseInt(timeoutField.getText())/1000);
+			}
+			
 			
 			
 		}
