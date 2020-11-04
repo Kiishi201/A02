@@ -70,18 +70,18 @@ public class Receiver extends JFrame implements ActionListener {
 
 		this.ipLabel = new JLabel("Sender IP Address");
 		this.ipAddText = new JTextField(20);
-		this.portLabel = new JLabel("Port for ACK");
+		this.portLabel = new JLabel("Receiver Port Number");
 		this.portNoText = new JTextField(5);
 		// userMsg.setBackground(Color.RED);
 		// ClientGUI.serverMsg = new JTextArea();
 		// ClientGUI.serverMsg.setBackground(Color.RED);
-		this.portNoDatalabel = new JLabel("Port for Data");
+		this.portNoDatalabel = new JLabel("Sender Port Number");
 		this.portNoDataText = new JTextField(5);
 		this.textFileName = new JLabel("Text File Name");
 		this.textFileNameField = new JTextField(5);
 		this.packetsReceivedLabel = new JLabel("Number of inorder packets");
 		this.packetsReceivedField = new JTextField(5);
-		this.maxSizeLabel=new JLabel("Max size of datagram");
+		this.maxSizeLabel=new JLabel("Max size of datagram (bytes)");
 		this.maxSizeField=new JTextField(10);
 		this.timeoutLabel = new JLabel("Timeout (microseconds)");
 		this.timeoutField = new JTextField(20);
@@ -188,7 +188,7 @@ public class Receiver extends JFrame implements ActionListener {
 				Integer senderPortNum;
 				Integer datagramMaxSize;
 
-				if(checkFields(portNoText.getText(), portNoDataText.getText(), textFileNameField.getText(), maxSizeField.getText(), ipAddText.getText())) {
+				if(checkFields(portNoText.getText(), portNoDataText.getText(), textFileNameField.getText(), maxSizeField.getText(), ipAddText.getText(), timeoutField.getText())) {
 					Receiver.receiveButton.setEnabled (false);
 					receiverPortNum = Integer.parseInt(portNoText.getText());
 					senderPortNum = Integer.parseInt(portNoDataText.getText());
@@ -236,7 +236,7 @@ public class Receiver extends JFrame implements ActionListener {
 								 
 	}
 
-	public boolean checkFields(String receiverPortNum, String senderPortNum, String fileName, String datagramMaxSize, String address){
+	public boolean checkFields(String receiverPortNum, String senderPortNum, String fileName, String datagramMaxSize, String address, String timeout){
 		boolean valid=true;
 		if(address == null || address.isEmpty()|| !isValidInet4Address(address)) {
 			JOptionPane.showMessageDialog(null,
@@ -245,30 +245,37 @@ public class Receiver extends JFrame implements ActionListener {
 				    JOptionPane.WARNING_MESSAGE);
 			valid=false;
 		}
-		else if(receiverPortNum==null || fileName.isEmpty()|| Integer.parseInt(receiverPortNum)<0) {
+		else if(receiverPortNum==null || receiverPortNum.isEmpty()|| Integer.parseInt(receiverPortNum)<0) {
 			JOptionPane.showMessageDialog(null,
 				    "Invalid Receiver Port Number",
 				    "Invalid Input",
 				    JOptionPane.WARNING_MESSAGE);
 			valid=false;
 		}
-		else if(senderPortNum==null || Integer.parseInt(senderPortNum)<0) {
+		else if(senderPortNum==null || senderPortNum.isEmpty()|| Integer.parseInt(senderPortNum)<0) {
 			JOptionPane.showMessageDialog(null,
 				    "Invalid Sender Port Number",
 				    "Invalid Input",
 				    JOptionPane.WARNING_MESSAGE);
 			valid=false;
 		}
-		else if(fileName == null || fileName.isEmpty()){
+		else if(fileName == null || fileName.isEmpty() || fileName.length()<4 ||(fileName.length()>=4 &&!(fileName.substring(fileName.length()-4, fileName.length()).equals(".txt")))){
 			JOptionPane.showMessageDialog(null,
 				    "Invalid File Name",
 				    "Invalid Input",
 				    JOptionPane.WARNING_MESSAGE);
 			valid=false;
 		}	
-		else if(datagramMaxSize==null || Integer.parseInt(datagramMaxSize)>=65508|| Integer.parseInt(datagramMaxSize)<0){
+		else if(datagramMaxSize==null || datagramMaxSize.isEmpty()|| Integer.parseInt(datagramMaxSize)>=65508|| Integer.parseInt(datagramMaxSize)<0){
 			JOptionPane.showMessageDialog(null,
 				    "Invalid Maximum Datagram Size",
+				    "Invalid Input",
+				    JOptionPane.WARNING_MESSAGE);
+			valid=false;
+		}
+		else if(timeout==null || timeout.isEmpty()|| Integer.parseInt(timeout)<0){
+			JOptionPane.showMessageDialog(null,
+				    "Invalid Timeout Value",
 				    "Invalid Input",
 				    JOptionPane.WARNING_MESSAGE);
 			valid=false;
