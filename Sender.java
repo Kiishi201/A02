@@ -27,7 +27,8 @@ public class Sender {
 		receiverIP = argv[0];
 		receiverPortNum = Integer.parseInt(argv[1]);
 		senderPortNum = Integer.parseInt(argv[2]);
-		String fileName = System.getProperty("user.dir").concat("\\src\\"+argv[3]);
+		//String fileName = System.getProperty("user.dir").concat("\\src\\"+argv[3]);
+		String fileName = System.getProperty("user.dir").concat("\\"+argv[3]);
 		datagramMaxSize = Long.parseLong(argv[4]);
 		timeout = Integer.parseInt(argv[5]);
 		fileEnd = true;
@@ -35,11 +36,13 @@ public class Sender {
 		String[] fileArray;
 		
 		DatagramSocket socket = new DatagramSocket(senderPortNum);
+		
 		try {
             in = new BufferedReader(new FileReader(file));
         } catch (FileNotFoundException e) {
             System.err.println("Could not open quote file.");
         }
+		if(file.length()>0) {
 		fileArray=fileToArray();
 		int packetCount=0; 
 		String alternate;
@@ -50,6 +53,7 @@ public class Sender {
              // receive request
              
              DatagramPacket packet = new DatagramPacket(buf, buf.length);
+             DatagramPacket lastPacket = null;
 			 while(true) {
 				 try {
 					 socket.receive(packet);
@@ -57,6 +61,8 @@ public class Sender {
 					   // rest of the success path
 					} catch (SocketTimeoutException ex) {
 						System.err.print("Timeout");
+						socket.send(lastPacket);
+						
 					}
 				 
 				 String packetData = new String(packet.getData());
@@ -89,11 +95,16 @@ public class Sender {
 	                
 	                packet = new DatagramPacket(buf, buf.length, address, receiverPortNum);
 	                socket.send(packet);
+	                lastPacket=packet;
+	                socket.setSoTimeout(timeout/1000);
 	            } catch (IOException e) {
 	                e.printStackTrace();
 	                
 	            }
 	        }
+		}else {
+			System.err.println("File is empty, Goodbye.");
+		}
 		
 		//Sending datagram
 		/*
