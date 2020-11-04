@@ -42,6 +42,7 @@ public class Receiver extends JFrame implements ActionListener {
 	private JLabel packetsReceivedLabel;
 	private JTextField packetsReceivedField;
 	private static JButton receiveButton;
+	private static JButton reliableButton;
 	private JLabel maxSizeLabel;
 	private JTextField maxSizeField;
 	private JLabel timeoutLabel;
@@ -63,7 +64,7 @@ public class Receiver extends JFrame implements ActionListener {
 
 	public Receiver() {
 		this.panel = new JPanel(new GridLayout(3, 1));
-		this.secondaryPanelOne = new JPanel(new GridLayout(10, 5));
+		this.secondaryPanelOne = new JPanel(new GridLayout(11, 5));
 		// this.secondaryPanelTwo = new JPanel(new GridLayout(1, 2));
 		// this.ipAddText = new JTextField(10);
 		// this.portNoText = new JTextField(5);
@@ -80,13 +81,14 @@ public class Receiver extends JFrame implements ActionListener {
 		this.textFileName = new JLabel("Text File Name");
 		this.textFileNameField = new JTextField(5);
 		this.packetsReceivedLabel = new JLabel("Number of inorder packets");
-		this.packetsReceivedField.setEditable(false);
 		this.packetsReceivedField = new JTextField(5);
+		this.packetsReceivedField.setEditable(false);
 		this.maxSizeLabel=new JLabel("Max size of datagram (bytes)");
 		this.maxSizeField=new JTextField(10);
 		this.timeoutLabel = new JLabel("Timeout (microseconds)");
 		this.timeoutField = new JTextField(20);
 		Receiver.receiveButton = new JButton("Receive");
+		Receiver.reliableButton=new JButton("Reliable");
 		
 		
 
@@ -148,6 +150,12 @@ public class Receiver extends JFrame implements ActionListener {
 		
 		this.secondaryPanelOne.add(new JLabel());
 		this.secondaryPanelOne.add(new JLabel());
+		this.secondaryPanelOne.add(this.reliableButton);
+		this.secondaryPanelOne.add(new JLabel());
+		this.secondaryPanelOne.add(new JLabel());
+		
+		this.secondaryPanelOne.add(new JLabel());
+		this.secondaryPanelOne.add(new JLabel());
 		this.secondaryPanelOne.add(new JLabel());
 		this.secondaryPanelOne.add(new JLabel());
 		this.secondaryPanelOne.add(new JLabel());
@@ -195,6 +203,7 @@ public class Receiver extends JFrame implements ActionListener {
 					senderPortNum = Integer.parseInt(portNoDataText.getText());
 					String fileName = textFileNameField.getText();
 					datagramMaxSize = Integer.parseInt(maxSizeField.getText());
+					boolean reliable =isReliable();
 					byte[] buf = new byte[(int) (long) datagramMaxSize]; 
 					InetAddress address = null;
 					try {
@@ -223,7 +232,7 @@ public class Receiver extends JFrame implements ActionListener {
 					}
 
 					try {
-						receive(datagramMaxSize,fileName, senderPortNum);
+						receive(reliable, datagramMaxSize,fileName, senderPortNum);
 					} catch (IOException e1) {
 						// TODO Auto-generated catch block
 						System.err.println("Receive failed");
@@ -233,10 +242,27 @@ public class Receiver extends JFrame implements ActionListener {
 			}
 		
 		});
-		
+		this.reliableButton.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(reliableButton.getText().equalsIgnoreCase("Reliable")) {
+					reliableButton.setText("Unreliable");
+				}else {
+					reliableButton.setText("Reliable");
+				}
+			}
+		});
+
 								 
 	}
-
+	public boolean isReliable() {
+		boolean reliable=false;
+		if(reliableButton.getText().equalsIgnoreCase("Reliable")) {
+			reliable=true;
+		}
+		return reliable;
+	}
 	public boolean checkFields(String receiverPortNum, String senderPortNum, String fileName, String datagramMaxSize, String address, String timeout){
 		boolean valid=true;
 		if(address == null || address.isEmpty()|| !isValidInet4Address(address)) {
@@ -304,7 +330,7 @@ public class Receiver extends JFrame implements ActionListener {
 
 		return matcher.matches();
 	}
-	public void receive(int datagramMaxSize, String fileName, int senderPort) throws IOException{
+	public void receive(boolean reliableMode, int datagramMaxSize, String fileName, int senderPort) throws IOException{
 		System.out.println("Receive called");
 		boolean eof =true;
 		byte[] buf = new byte[(int) (long) datagramMaxSize]; 
@@ -400,10 +426,14 @@ public class Receiver extends JFrame implements ActionListener {
 				responseString= packetCount%2==0 ? "0": "1";
 				response.setData(responseString.getBytes());
 				//System.out.println(line+"\n");
-
-				socket.send(response);
+				if(reliableMode ||(!reliableMode && !((packetCount+1)%10==0))){
+					socket.send(response);
+				}
+				
 				lastPacket=packet;
 				socket.setSoTimeout(Integer.parseInt(timeoutField.getText())/1000);
+			}else {
+				socket.send(lastPacket);
 			}
 			
 			
