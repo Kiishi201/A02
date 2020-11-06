@@ -63,7 +63,7 @@ public class Sender {
 				 try {
 						 socket.receive(packet);
 					   // rest of the success path
-					} catch (SocketTimeoutException ex) {
+					} catch (SocketTimeoutException ex){
 						System.err.print("Timeout");
 						socket.send(lastPacket);
 					}
@@ -72,10 +72,10 @@ public class Sender {
 				 packetData=packetData.trim();
 				 System.out.println("packetData: "+packetData);
 				 System.out.println("Seq Num expected: "+alternate);
-				 if(packetData.substring(0, 1).equals(alternate)) {
+				 if(packetData.substring(0, 1).equals(alternate)){
 					 System.out.println("Breaking");
 					 break;
-				 }else if(packetData.equals("EOF")) {
+				 }else if(packetData.equals("0EOF")||packetData.equals("1EOF")) {
 					 eof=true;
 					 break;
 				 }
@@ -198,6 +198,8 @@ public class Sender {
 	        packetString[count]=result;
 	        count++;
 	    }
+	    seqNum= count%2==0 ? "0": "1";
+	    packetString[packetString.length-1]=(seqNum+"EOF");
 	    return packetString;
 	}
 public class Datagram{
