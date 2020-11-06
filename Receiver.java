@@ -338,6 +338,7 @@ public class Receiver extends JFrame implements ActionListener {
 		DatagramPacket lastPacket = new DatagramPacket(buf, buf.length);
 		String line;
 		String responseString;
+		String lastPacketSeq;
 		int packetCount=0;
 		//File file = new File("C:\\Users\\pacman\\eclipse-workspace\\CP372 A2\\src\\"+fileName);
 		FileOutputStream fileWriter=null;
@@ -352,47 +353,11 @@ public class Receiver extends JFrame implements ActionListener {
 			e1.printStackTrace();
 		}
 		  
-		//Create the file
-		/*
-		try {
-			if (file.createNewFile())
-			{
-			    System.out.println("File created");
-			} else {
-			    System.out.println("File already exists.");
-			}
-		} catch (IOException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
-		FileWriter fileWriter=null;
-		String seqNum="0";
-		try {
-			fileWriter = new FileWriter(file);
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}*/
-		/*
-		InetAddress address = null;
-		try {
-			address = InetAddress.getByName(ipAddText.getText());
-		} catch (UnknownHostException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		} 
-		DatagramPacket packetOut = new
-		DatagramPacket(buf, buf.length, address, senderPort); 
-		try {
-			socket.send(packetOut);
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		*/
-				 
+	
 		System.out.println("Incoming: ");
 		while(eof) {
+			responseString= (packetCount-1)%2==0 ? "1": "0";
+			/*
 			try {
 				socket.receive(packet);
 				packetCount++;
@@ -404,14 +369,44 @@ public class Receiver extends JFrame implements ActionListener {
 						socket.send(lastPacket);
 
 				}
+			*/
+			while(true) {
+
+				try {
+					socket.receive(packet);
+					// rest of the success path
+				} catch (SocketTimeoutException ex){
+					System.err.print("Timeout");
+					socket.send(lastPacket);
+				}
+
+				//String packetData = new String(packet.getData());
+				//packetData=packetData.trim();
+				
+				line=new String(packet.getData(), 0, packet.getLength());
+				line=line.trim();
+				System.out.println("line: "+line);
+				System.out.println("Seq Num expected: "+responseString);
+				if(line.substring(0, 1).equals(responseString)) {
+					System.out.println("Breaking");
+					packetCount++;
+					break;
+				}else if(packet.equals(lastPacket)) {
+					DatagramPacket response= new DatagramPacket(buf, buf.length, lastPacket.getAddress(), lastPacket.getPort());
+					response.setData(responseString.getBytes());
+					socket.send(response);
+				}
+
+			}
+			
 			line=new String(packet.getData(), 0, packet.getLength());
 			line=line.trim();
-			responseString= (packetCount-1)%2==0 ? "0": "1";
-			System.out.println("line: "+line);
-			if(line.equals("EOF")){
+			//responseString= (packetCount-1)%2==0 ? "0": "1";
+			//System.out.println("line: "+line);
+			if(line.equals("0EOF")||line.equals("1EOF")){
 				eof=false;
 				break;
-			}else if(line.substring(0, 1).equals(responseString)){
+			}else {
 				try {
 					line=line.concat("\n");
 					fileWriter.write(line.substring(1, line.length()).getBytes());
@@ -431,9 +426,8 @@ public class Receiver extends JFrame implements ActionListener {
 				}
 				
 				lastPacket=packet;
+				lastPacketSeq=line.substring(0, 1);
 				socket.setSoTimeout(Integer.parseInt(timeoutField.getText())/1000);
-			}else {
-				socket.send(lastPacket);
 			}
 			
 			
